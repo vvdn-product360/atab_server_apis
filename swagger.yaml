@@ -24,20 +24,24 @@ tags:
     description: Device configuration endpoints
 security:
   - bearerAuth: []
+  - deviceTokenAuth: []
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    deviceTokenAuth:
+      type: apiKey
+      in: header
+      name: device_token
+      description: Device token returned during registration used in place of bearer credentials.
   schemas:
     DeviceRegistrationRequest:
       type: object
       required:
         - device_id
         - pnr
-        - passenger
-        - flight
       properties:
         device_id:
           type: string
@@ -45,6 +49,21 @@ components:
         pnr:
           type: string
           example: ABC123
+        special_assistance:
+          type: array
+          items:
+            type: string
+          example: ["hearing_impaired"]
+        preferred_language:
+          type: string
+          example: en-US
+
+    DeviceRegistrationResponse:
+      type: object
+      properties:
+        device_token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         passenger:
           type: object
           required:
@@ -53,10 +72,10 @@ components:
           properties:
             first_name:
               type: string
-              example: John
+              example: Abdul
             last_name:
               type: string
-              example: Doe
+              example: Kalam
             seat_number:
               type: string
               example: 12A
@@ -72,7 +91,6 @@ components:
           type: object
           required:
             - flight_number
-            - departure_date
             - departure_time
             - origin
             - destination
@@ -80,20 +98,16 @@ components:
             flight_number:
               type: string
               example: AA1234
-            departure_date:
-              type: string
-              format: date
-              example: "2025-12-22"
             departure_time:
               type: string
               format: date-time
               example: "2025-12-22T14:30:00Z"
             origin:
               type: string
-              example: LAX
+              example: CBE
             destination:
               type: string
-              example: JFK
+              example: MAS
             gate:
               type: string
               example: B12
@@ -103,26 +117,14 @@ components:
         voice_profile:
           type: object
           properties:
-            file_id:
+            file_url:
               type: string
-              example: voice_abc123
+              format: uri
+              example: https://audio-cdn.atab.com/voice/abc123.mp3
             duration:
               type: number
               format: float
               example: 5.2
-            language:
-              type: string
-              example: en-US
-
-    DeviceRegistrationResponse:
-      type: object
-      properties:
-        device_token:
-          type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        registration_id:
-          type: string
-          example: REG-789012345
         expires_at:
           type: string
           format: date-time
@@ -146,7 +148,7 @@ components:
           properties:
             ssid:
               type: string
-              example: ATAB_LAX_Secure
+              example: ATAB_CBE_Secure
             password:
               type: string
               example: temp_pass_123
@@ -166,19 +168,13 @@ components:
         signal_strength:
           type: integer
           example: -45
-        last_seen:
+        accesspoint_mac:
+          type: string
+          example: "00:1A:2B:3C:4D:5E"
+        timestamp:
           type: string
           format: date-time
           example: "2025-12-22T10:30:00Z"
-        location:
-          type: object
-          properties:
-            terminal:
-              type: string
-              example: "2"
-            area:
-              type: string
-              example: B_gates
 
     DeviceStatusUpdateResponse:
       type: object
@@ -283,13 +279,6 @@ components:
               type: number
               format: float
               example: 5.2
-            language:
-              type: string
-              example: en-US
-            expires_at:
-              type: string
-              format: date-time
-              example: "2025-12-23T23:59:59Z"
 
     FlightStatusResponse:
       type: object
@@ -477,7 +466,7 @@ paths:
     post:
       tags:
         - Device Management
-      summary: Register a new device with passenger and flight information
+      summary: Register a new device with passenger and pnr information
       operationId: registerDevice
       requestBody:
         required: true
@@ -519,6 +508,7 @@ paths:
             type: string
       security:
         - bearerAuth: []
+        - deviceTokenAuth: []
       requestBody:
         required: true
         content:
@@ -533,8 +523,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeviceStatusUpdateResponse'
           headers:
-            X-RateLimit-Limit:
-              $ref: '#/components/responses/RateLimitHeaders#/headers/X-RateLimit-Limit'
         '400':
           description: Bad request
           content:
@@ -587,6 +575,7 @@ paths:
           description: Comma-separated notification types
       security:
         - bearerAuth: []
+        - deviceTokenAuth: []
       responses:
         '200':
           description: List of notifications
@@ -594,9 +583,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotificationListResponse'
-          headers:
-            X-RateLimit-Limit:
-              $ref: '#/components/responses/RateLimitHeaders#/headers/X-RateLimit-Limit'
         '401':
           description: Unauthorized
           content:
@@ -629,6 +615,7 @@ paths:
             type: string
       security:
         - bearerAuth: []
+        - deviceTokenAuth: []
       requestBody:
         required: true
         content:
@@ -674,6 +661,7 @@ paths:
             type: string
       security:
         - bearerAuth: []
+        - deviceTokenAuth: []
       responses:
         '200':
           description: Binary audio data (MP3)
@@ -709,6 +697,7 @@ paths:
             type: string
       security:
         - bearerAuth: []
+        - deviceTokenAuth: []
       responses:
         '200':
           description: Voice profile metadata
@@ -737,6 +726,7 @@ paths:
             type: string
       security:
         - bearerAuth: []
+        - deviceTokenAuth: []
       responses:
         '200':
           description: Flight status
@@ -765,6 +755,7 @@ paths:
             type: string
       security:
         - bearerAuth: []
+        - deviceTokenAuth: []
       responses:
         '200':
           description: Configuration
@@ -792,6 +783,7 @@ paths:
             type: string
       security:
         - bearerAuth: []
+        - deviceTokenAuth: []
       requestBody:
         required: true
         content:
