@@ -18,10 +18,6 @@ tags:
     description: Notification retrieval and acknowledgement
   - name: Content
     description: Audio and voice profile endpoints
-  - name: Flight
-    description: Flight status and passenger-specific flight info
-  - name: Configuration
-    description: Device configuration endpoints
 security:
   - bearerAuth: []
   - deviceTokenAuth: []
@@ -46,17 +42,6 @@ components:
         device_id:
           type: string
           example: ATAB-001234567890
-        pnr:
-          type: string
-          example: ABC123
-        special_assistance:
-          type: array
-          items:
-            type: string
-          example: ["hearing_impaired"]
-        preferred_language:
-          type: string
-          example: en-US
 
     DeviceRegistrationResponse:
       type: object
@@ -102,6 +87,10 @@ components:
               type: string
               format: date-time
               example: "2025-12-22T14:30:00Z"
+            boarding_time:
+              type: string
+              format: date-time
+              example: "2025-12-22T14:30:00Z"
             origin:
               type: string
               example: CBE
@@ -135,11 +124,6 @@ components:
             polling_interval:
               type: integer
               example: 30
-            notification_types:
-              type: array
-              items:
-                type: string
-              example: ["boarding", "gate_change", "delay"]
             audio_volume:
               type: integer
               example: 70
@@ -264,148 +248,6 @@ components:
         user_action:
           type: string
           example: viewed
-
-    VoiceProfileResponse:
-      type: object
-      properties:
-        voice_profile:
-          type: object
-          properties:
-            file_url:
-              type: string
-              format: uri
-              example: https://audio-cdn.atab.com/voice/abc123.mp3
-            duration:
-              type: number
-              format: float
-              example: 5.2
-
-    FlightStatusResponse:
-      type: object
-      properties:
-        flight:
-          type: object
-          properties:
-            flight_number:
-              type: string
-              example: AA1234
-            status:
-              type: string
-              example: on_time
-            departure_time:
-              type: string
-              format: date-time
-              example: "2025-12-22T14:30:00Z"
-            actual_departure:
-              type: string
-              format: date-time
-              nullable: true
-              example: null
-            gate:
-              type: string
-              example: B15
-            gate_changed:
-              type: boolean
-              example: true
-            gate_change_time:
-              type: string
-              format: date-time
-              example: "2025-12-22T10:25:00Z"
-            terminal:
-              type: string
-              example: "2"
-            boarding_status:
-              type: string
-              example: started
-            boarding_time:
-              type: string
-              format: date-time
-              example: "2025-12-22T13:45:00Z"
-            boarding_closes:
-              type: string
-              format: date-time
-              example: "2025-12-22T14:15:00Z"
-        passenger:
-          type: object
-          properties:
-            seat_number:
-              type: string
-              example: 12A
-            boarding_group:
-              type: string
-              example: "3"
-            checkin_status:
-              type: string
-              example: completed
-        next_update:
-          type: string
-          format: date-time
-          example: "2025-12-22T10:32:00Z"
-
-    ConfigResponse:
-      type: object
-      properties:
-        config:
-          type: object
-          properties:
-            polling_interval:
-              type: integer
-              example: 30
-            notification_types:
-              type: array
-              items:
-                type: string
-              example: ["boarding", "gate_change", "delay", "baggage"]
-            audio_settings:
-              type: object
-              properties:
-                volume:
-                  type: integer
-                  example: 70
-                voice_trigger_enabled:
-                  type: boolean
-                  example: true
-                language:
-                  type: string
-                  example: en-US
-            display_settings:
-              type: object
-              properties:
-                brightness:
-                  type: integer
-                  example: 80
-                timeout:
-                  type: integer
-                  description: seconds
-                  example: 10
-            alert_settings:
-              type: object
-              properties:
-                vibration_enabled:
-                  type: boolean
-                  example: true
-                led_enabled:
-                  type: boolean
-                  example: true
-            timezone:
-              type: string
-              example: America/Los_Angeles
-
-    UpdateConfigRequest:
-      type: object
-      properties:
-        audio_settings:
-          type: object
-          properties:
-            volume:
-              type: integer
-              example: 85
-        alert_settings:
-          type: object
-          properties:
-            vibration_enabled:
-              type: boolean
-              example: false
 
     GenericResponse:
       type: object
@@ -683,133 +525,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /devices/{device_id}/voice-profile:
-    get:
-      tags:
-        - Content
-      summary: Retrieve passenger's custom voice recording metadata (URL)
-      operationId: getVoiceProfile
-      parameters:
-        - name: device_id
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-        - deviceTokenAuth: []
-      responses:
-        '200':
-          description: Voice profile metadata
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VoiceProfileResponse'
-        '404':
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /devices/{device_id}/flight:
-    get:
-      tags:
-        - Flight
-      summary: Get current flight information and status
-      operationId: getFlightStatus
-      parameters:
-        - name: device_id
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-        - deviceTokenAuth: []
-      responses:
-        '200':
-          description: Flight status
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FlightStatusResponse'
-        '404':
-          description: Flight not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /devices/{device_id}/config:
-    get:
-      tags:
-        - Configuration
-      summary: Retrieve device configuration settings
-      operationId: getDeviceConfig
-      parameters:
-        - name: device_id
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-        - deviceTokenAuth: []
-      responses:
-        '200':
-          description: Configuration
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConfigResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    put:
-      tags:
-        - Configuration
-      summary: Update device configuration settings
-      operationId: updateDeviceConfig
-      parameters:
-        - name: device_id
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-        - deviceTokenAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateConfigRequest'
-      responses:
-        '200':
-          description: Configuration updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GenericResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /health:
+  /connectivity_check:
     get:
       tags:
         - Device Management
-      summary: Health check endpoint
-      operationId: healthCheck
+      summary: Check connectivity with server
+      operationId: connectivityCheck
       responses:
         '200':
           description: OK
