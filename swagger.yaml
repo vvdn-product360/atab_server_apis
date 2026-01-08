@@ -364,7 +364,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeviceStatusUpdateResponse'
-          headers:
         '400':
           description: Bad request
           content:
